@@ -1,21 +1,18 @@
 import 'dart:convert';
+import 'package:flutter_html/html_parser.dart';
 
+import 'image_properties.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as parser;
 
-import 'image_properties.dart';
-
-typedef CustomRender = Widget Function(dom.Node node, List<Widget> children);
 typedef CustomTextStyle = TextStyle Function(
   dom.Node node,
   TextStyle baseStyle,
 );
 typedef CustomTextAlign = TextAlign Function(dom.Element elem);
 typedef CustomEdgeInsets = EdgeInsets Function(dom.Node node);
-typedef OnLinkTap = void Function(String url);
-typedef OnImageTap = void Function(String source);
 
 const OFFSET_TAGS_FONT_SIZE_FACTOR =
     0.7; //The ratio of the parent font for each of the offset tags: sup or sub
@@ -39,7 +36,7 @@ class LinkTextSpan extends TextSpan {
       {TextStyle style,
       this.url,
       String text,
-      OnLinkTap onLinkTap,
+      OnTap onLinkTap,
       List<TextSpan> children})
       : super(
           style: style,
@@ -63,7 +60,7 @@ class LinkBlock extends Container {
     String url,
     EdgeInsets padding,
     EdgeInsets margin,
-    OnLinkTap onLinkTap,
+    OnTap onLinkTap,
     this.children,
   }) : super(
           padding: padding,
@@ -147,6 +144,7 @@ class ParseContext {
   }
 }
 
+@deprecated
 class HtmlRichTextParser extends StatelessWidget {
   HtmlRichTextParser({
     this.shrinkToFit,
@@ -179,7 +177,7 @@ class HtmlRichTextParser extends StatelessWidget {
   final ImageErrorListener onImageError;
   final TextStyle linkStyle;
   final ImageProperties imageProperties;
-  final OnImageTap onImageTap;
+  final OnTap onImageTap;
   final bool showImages;
 
   // style elements set a default style
@@ -632,9 +630,11 @@ class HtmlRichTextParser extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[],
             );
-            nextContext.rootWidgetList.add(Container(
-                margin: EdgeInsets.symmetric(vertical: 12.0),
-                child: nextContext.parentElement));
+            nextContext.rootWidgetList.add(
+              Container(
+                  margin: EdgeInsets.symmetric(vertical: 12.0),
+                  child: nextContext.parentElement),
+            );
             break;
 
           // we don't handle tbody, thead, or tfoot elements separately for now
@@ -788,7 +788,8 @@ class HtmlRichTextParser extends StatelessWidget {
                     },
                   ));
                 } else if (node.attributes['src'].startsWith('asset:')) {
-                  final assetPath = node.attributes['src'].replaceFirst('asset:', '');
+                  final assetPath =
+                      node.attributes['src'].replaceFirst('asset:', '');
                   precacheImage(
                     AssetImage(assetPath),
                     buildContext,
